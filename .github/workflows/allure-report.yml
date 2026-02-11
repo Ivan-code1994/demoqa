@@ -43,25 +43,37 @@ jobs:
           echo "ℹ️ Sin historial previo"
         fi
     
-    # 🔴 SOLUCIÓN: Dar permisos de ejecución al mvnw
     - name: Dar permisos a mvnw
       run: chmod +x mvnw
     
-    - name: Ejecutar tests con Allure
+    - name: Ejecutar tests
       run: |
         ./mvnw clean test \
           -Dtest=Runner \
           -Dcucumber.filter.tags="${{ github.event.inputs.tags || '@pruebas1' }}"
     
+    # 🔴 NUEVO: Configurar Allure desde tools/
+    - name: Configurar Allure
+      run: |
+        # Dar permisos de ejecución a los binarios de Allure
+        chmod +x tools/allure/bin/allure
+        chmod +x tools/allure/bin/allure.bat
+        # Agregar al PATH
+        echo "$(pwd)/tools/allure/bin" >> $GITHUB_PATH
+        # Verificar
+        allure --version || echo "Allure configurado"
+    
+    # 🔴 CAMBIO CRÍTICO: Usar el mismo comando que tu batch
     - name: Generar reporte Allure
       run: |
-        mvn allure:report
+        tools/allure/bin/allure generate allure-results --clean -o allure-report
     
+    # 🔴 CAMBIO IMPORTANTE: Publicar desde allure-report, NO desde target/
     - name: Publicar en GitHub Pages
       uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./target/site/allure-maven-plugin
+        publish_dir: ./allure-report  # ✅ CAMBIADO
         publish_branch: gh-pages
         destination_dir: ${{ github.run_number }}
         keep_files: true
@@ -70,4 +82,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: allure-report-${{ github.run_number }}
-        path: ./target/site/allure-maven-plugin
+        path: ./allure-report  # ✅ CAMBIADO
