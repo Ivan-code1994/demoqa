@@ -1,0 +1,7 @@
+runner\Runner.class
+pages\BasePage.class
+steps\demoqaSteps\DemoQASteps.class
+steps\Utils\DataManager.class
+steps\hooks\Hooks.class
+pages\demoQA\DemoQA.class
+pages\bussines\ValidarDatosRegistro.class
