@@ -2,54 +2,68 @@ name: Tests con Allure
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   workflow_dispatch:
+    inputs:
+      tags:
+        description: 'Tags de Cucumber (ej: @CrearNuevoTicket)'
+        required: false
+        default: '@CrearNuevoTicket'
 
 jobs:
   test:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4  # También actualiza checkout a v4
       with:
-        fetch-depth: 0  # Importante para obtener el historial
+        fetch-depth: 0
     
-    - name: Configurar Java
-      uses: actions/setup-java@v3
+    - name: Configurar Java 21
+      uses: actions/setup-java@v4  # setup-java también a v4
       with:
-        java-version: '11'
+        java-version: '21'
         distribution: 'temurin'
     
-    - name: Descargar reporte anterior (para historial)
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4  # cache a v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+    
+    - name: Descargar reporte anterior (historial)
       run: |
         git clone --branch gh-pages --single-branch https://github.com/${{ github.repository }} temp-pages || true
         if [ -d "temp-pages/${{ github.run_number }}/history" ]; then
           mkdir -p allure-results/history
           cp -r temp-pages/${{ github.run_number }}/history/* allure-results/history/ 2>/dev/null || :
-          echo "Historial copiado"
+          echo "✅ Historial copiado"
         else
-          echo "ℹSin historial previo"
+          echo "ℹ️ Sin historial previo"
         fi
     
-    - name: Ejecutar tests
-      run: ./mvnw clean test -Dtest=Runner
+    - name: Ejecutar tests con Allure
+      run: |
+        ./mvnw clean test \
+          -Dtest=Runner \
+          -Dcucumber.filter.tags="${{ github.event.inputs.tags || '@CrearNuevoTicket' }}"
     
     - name: Generar reporte Allure
       run: |
-        # Allure viene pre-instalado en ubuntu-latest
-        allure generate allure-results --clean -o allure-report
+        mvn allure:report
     
     - name: Publicar en GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
+      uses: peaceiris/actions-gh-pages@v4  # actions-gh-pages también a v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./allure-report
+        publish_dir: ./target/site/allure-maven-plugin
         publish_branch: gh-pages
         destination_dir: ${{ github.run_number }}
         keep_files: true
     
-    - name: Subir artefacto (por si acaso)
-      uses: actions/upload-artifact@v3
+    - name: Subir artefacto
+      uses: actions/upload-artifact@v4  
       with:
         name: allure-report-${{ github.run_number }}
-        path: allure-report/
+        path: ./target/site/allure-maven-plugin
