@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       tags:
-        description: 'Tags de Cucumber (ej: @CrearNuevoTicket)'
+        description: 'Tags de Cucumber (ej: @pruebas1)'
         required: false
-        default: '@CrearNuevoTicket'
+        default: '@pruebas1'
 
 jobs:
   test:
@@ -47,7 +47,7 @@ jobs:
       run: |
         ./mvnw clean test \
           -Dtest=Runner \
-          -Dcucumber.filter.tags="${{ github.event.inputs.tags || '@CrearNuevoTicket' }}"
+          -Dcucumber.filter.tags="${{ github.event.inputs.tags || '@pruebas1' }}"
     
     - name: Generar reporte Allure
       run: |
