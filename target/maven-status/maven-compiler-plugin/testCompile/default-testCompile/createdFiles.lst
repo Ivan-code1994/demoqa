@@ -5,3 +5,4 @@ steps\Utils\DataManager.class
 steps\hooks\Hooks.class
 pages\demoQA\DemoQA.class
 pages\bussines\ValidarDatosRegistro.class
+steps\hooks\AllureMetadataHook.class

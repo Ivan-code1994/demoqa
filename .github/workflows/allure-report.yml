@@ -1,0 +1,55 @@
+name: Tests con Allure
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # Importante para obtener el historial
+    
+    - name: Configurar Java
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+    
+    - name: Descargar reporte anterior (para historial)
+      run: |
+        git clone --branch gh-pages --single-branch https://github.com/${{ github.repository }} temp-pages || true
+        if [ -d "temp-pages/${{ github.run_number }}/history" ]; then
+          mkdir -p allure-results/history
+          cp -r temp-pages/${{ github.run_number }}/history/* allure-results/history/ 2>/dev/null || :
+          echo "Historial copiado"
+        else
+          echo "ℹSin historial previo"
+        fi
+    
+    - name: Ejecutar tests
+      run: ./mvnw clean test -Dtest=Runner
+    
+    - name: Generar reporte Allure
+      run: |
+        # Allure viene pre-instalado en ubuntu-latest
+        allure generate allure-results --clean -o allure-report
+    
+    - name: Publicar en GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./allure-report
+        publish_branch: gh-pages
+        destination_dir: ${{ github.run_number }}
+        keep_files: true
+    
+    - name: Subir artefacto (por si acaso)
+      uses: actions/upload-artifact@v3
+      with:
+        name: allure-report-${{ github.run_number }}
+        path: allure-report/
