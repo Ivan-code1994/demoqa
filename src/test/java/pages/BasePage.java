@@ -22,8 +22,26 @@ public class BasePage {
         WebDriverManager.chromedriver().clearDriverCache().setup();
 
         ChromeOptions chromeOptions = new ChromeOptions();
-        chromeOptions.addArguments("----start-maximized");
-        chromeOptions.addArguments("--force-device-scale-factor=0.9");
+        
+        // 🔴 DETECTAR SI ESTÁ EN GITHUB ACTIONS
+        String isCI = System.getenv("CI");
+        
+        if (isCI != null && isCI.equals("true")) {
+            // ✅ MODO HEADLESS PARA GITHUB ACTIONS
+            System.out.println("🚀 Ejecutando en GitHub Actions - Modo Headless");
+            chromeOptions.addArguments("--headless=new");
+            chromeOptions.addArguments("--no-sandbox");
+            chromeOptions.addArguments("--disable-dev-shm-usage");
+            chromeOptions.addArguments("--disable-gpu");
+            chromeOptions.addArguments("--window-size=1920,1080");
+            chromeOptions.addArguments("--force-device-scale-factor=0.9");
+            chromeOptions.addArguments("--remote-allow-origins=*");
+        } else {
+            // ✅ MODO NORMAL PARA LOCAL
+            System.out.println("🚀 Ejecutando en Local - Modo Normal");
+            chromeOptions.addArguments("--start-maximized");  // 🔴 CORREGIDO: 2 guiones
+            chromeOptions.addArguments("--force-device-scale-factor=0.9");
+        }
 
         driver = new ChromeDriver(chromeOptions);
     }
@@ -33,10 +51,12 @@ public class BasePage {
     }
 
     public static void salirNavegacion(){
-        driver.quit();
+        if (driver != null) {
+            driver.quit();
+        }
     }
 
-    /** Interaccion con la UI**/
+    /* Interaccion con la UI*/
 
     public void webUrl(String url){
         driver.get(url);
